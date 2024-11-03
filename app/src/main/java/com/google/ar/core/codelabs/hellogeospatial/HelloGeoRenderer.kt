@@ -204,9 +204,6 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       return
     }
 
-    for (earthAnchor in earthAnchors){
-      earthAnchor.detach()
-    }
     // Place the earth anchor at the same altitude as that of the camera to make it easier to view.
     val altitude = earth.cameraGeospatialPose.altitude - 1
     // The rotation quaternion of the anchor in the East-Up-South (EUS) coordinate system.
