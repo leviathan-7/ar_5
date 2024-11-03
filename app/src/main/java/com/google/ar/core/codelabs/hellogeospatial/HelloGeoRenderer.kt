@@ -186,15 +186,17 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     }
 
     // Draw the placed anchor, if it exists.
-    earthAnchor?.let {
-      render.renderCompassAtAnchor(it)
+    for (earthAnchor in earthAnchors){
+      earthAnchor.let {
+        render.renderCompassAtAnchor(it)
+      }
     }
 
     // Compose the virtual scene with the background.
     backgroundRenderer.drawVirtualScene(render, virtualSceneFramebuffer, Z_NEAR, Z_FAR)
   }
 
-  var earthAnchor: Anchor? = null
+  var earthAnchors = mutableListOf<Anchor>()
 
   fun onMapClick(latLng: LatLng) {
     val earth = session?.earth ?: return
@@ -202,7 +204,9 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       return
     }
 
-    earthAnchor?.detach()
+    for (earthAnchor in earthAnchors){
+      earthAnchor.detach()
+    }
     // Place the earth anchor at the same altitude as that of the camera to make it easier to view.
     val altitude = earth.cameraGeospatialPose.altitude - 1
     // The rotation quaternion of the anchor in the East-Up-South (EUS) coordinate system.
@@ -210,12 +214,13 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
     val qy = 0f
     val qz = 0f
     val qw = 1f
-    earthAnchor =
+    val earthAnchor =
       earth.createAnchor(latLng.latitude, latLng.longitude, altitude, qx, qy, qz, qw)
     activity.view.mapView?.earthMarker?.apply {
       position = latLng
       isVisible = true
     }
+    earthAnchors.add(earthAnchor)
   }
 
   private fun SampleRender.renderCompassAtAnchor(anchor: Anchor) {
