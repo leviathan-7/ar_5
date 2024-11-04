@@ -21,6 +21,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.android.gms.maps.model.LatLng
 import com.google.ar.core.Anchor
+import com.google.ar.core.Earth
 import com.google.ar.core.TrackingState
 import com.google.ar.core.examples.java.common.helpers.DisplayRotationHelper
 import com.google.ar.core.examples.java.common.helpers.TrackingStateHelper
@@ -32,6 +33,10 @@ import com.google.ar.core.examples.java.common.samplerender.Texture
 import com.google.ar.core.examples.java.common.samplerender.arcore.BackgroundRenderer
 import com.google.ar.core.exceptions.CameraNotAvailableException
 import java.io.IOException
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 
 class HelloGeoRenderer(val activity: HelloGeoActivity) :
@@ -185,10 +190,28 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       )
     }
 
+    fun distance(latlng: LatLng, earth: Earth): Double {
+      val lat2 = earth.cameraGeospatialPose.latitude
+      val lon2 = earth.cameraGeospatialPose.longitude
+      val R = 6371000 // радиус Земли в метрах
+      val dLat = Math.toRadians(lat2 - latlng.latitude)
+      val dLon = Math.toRadians(lon2 - latlng.longitude)
+
+      val a = sin(dLat / 2) * sin(dLat / 2) +
+              cos(Math.toRadians(latlng.latitude)) * cos(Math.toRadians(lat2)) *
+              sin(dLon / 2) * sin(dLon / 2)
+
+      val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+      return R * c // расстояние в метрах
+    }
+
     // Draw the placed anchor, if it exists.
-    for (earthAnchor in earthAnchors){
-      earthAnchor.let {
-        render.renderCompassAtAnchor(it)
+    for (i in 0 until earthAnchors.size){
+      earthAnchors[i].let {
+        if (earth != null && distance(latLngs[i], earth) <= 3) {
+            render.renderCompassAtAnchor(it)
+        }
       }
     }
 
@@ -197,6 +220,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
   }
 
   var earthAnchors = mutableListOf<Anchor>()
+  var latLngs = mutableListOf<LatLng>()
 
   fun onMapClick(latLng: LatLng) {
     val earth = session?.earth ?: return
@@ -217,6 +241,7 @@ class HelloGeoRenderer(val activity: HelloGeoActivity) :
       position = latLng
       isVisible = true
     }
+    latLngs.add(latLng)
     earthAnchors.add(earthAnchor)
   }
 
